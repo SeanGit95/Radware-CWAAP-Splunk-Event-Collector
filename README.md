@@ -62,11 +62,3 @@ Once the Splunk app is installed, follow these steps:
 ## Logging
 
 - The app uses Python's `logging` module to provide detailed logs for debugging and operational tracking. Adjust the logging level according to your needs on the Configuration tab in Splunk.
-
-## License
-
-Include the license information for your repository here if applicable.
-
----
-
-This README file provides comprehensive guidance on how to set up, configure, and use the Radware-CWAAP-Splunk-Event-Collector. If there are additional features or configurations in your code, consider expanding on them in this document.
