@@ -26,7 +26,7 @@ def getTenantID(helper,credentials):
             exit(2)
         else:
             data= json.loads(response.read().decode("utf8"))
-            logging.debug("TenantID obtained: %s", data["tenantEntityId"])
+            logging.info("TenantID obtained: %s", data["tenantEntityId"])
             logging.debug("getTenantID obtained successfully.")
             return data["tenantEntityId"]
     except:
@@ -39,7 +39,7 @@ def getApplicationIDs(credentials):
         "requestEntityids": credentials["TenantID"],
         "Cookie": "Authorization=%s" % credentials["Bearer"],
         "Content-Type": "application/json;charset=UTF-8",
-        "User-Agent": "SplunkCollector/1.8.4"
+        "User-Agent": "SplunkCollector/1.7.8"
     } 
     if (credentials['use_proxy']):
         conn = http.client.HTTPSConnection(credentials['proxy_ip'],credentials['proxy_port'])
@@ -57,7 +57,7 @@ def getApplicationIDs(credentials):
             responsebody = json.loads(response.read().decode("utf8"))
             logging.debug("Complete response: %s", json.dumps(responsebody, indent=4))
             application_ids = [{"applicationId": app["id"]} for app in responsebody.get("content", [])]
-            logging.debug("Fetched %d application IDs successfully.", len(application_ids))
+            logging.info("Fetched %d application IDs successfully.", len(application_ids))
             logging.debug("Application IDs are: %s", json.dumps(application_ids))
             logging.debug("getApplicationIDs obtained successfully.")
             return application_ids
@@ -72,7 +72,7 @@ def getSessionToken(credentials):
     else:
         conn = http.client.HTTPSConnection("radware-public.okta.com")
     payload = "{\"username\":\"" + credentials["email_address"] + "\",\"password\":\"" + credentials["password"] + "\",\"options\":{ \"multiOptionalFactorEnroll\": true,\"warnBeforePasswordExpired\": true}}"
-    headers = {'Content-Type': "application/json",'Accept': 'application/json, text/plain, */*','User-Agent':'SplunkCollector/1.8.4'}
+    headers = {'Content-Type': "application/json",'Accept': 'application/json, text/plain, */*','User-Agent':'SplunkCollector/1.7.8'}
     try:
         conn.request("POST", "/api/v1/authn", payload, headers)
         res = conn.getresponse()
@@ -95,7 +95,7 @@ def getAuthorizationToken(credentials):
         conn.set_tunnel("radware-public.okta.com", port=443)
     else:
         conn = http.client.HTTPSConnection("radware-public.okta.com")
-    headers = {"Content-type": "application/json", "Accept": "application/json, text/plain, */*","User-Agent": "SplunkCollector/1.8.4"}
+    headers = {"Content-type": "application/json", "Accept": "application/json, text/plain, */*","User-Agent": "SplunkCollector/1.7.8"}
     try:
         conn.request("GET", "/oauth2/aus7ky2d5wXwflK5N1t7/v1/authorize?client_id=M1Bx6MXpRXqsv3M1JKa6" +
          "&nonce=n-0S6_WzA2M&" +
@@ -159,7 +159,6 @@ def LogOut(credentials):
     connection.close()
     exit(0)
 
-
 def getActivity(credentials, timelower, timeupper):
     if (credentials['use_proxy']):
         conn = http.client.HTTPSConnection(credentials['proxy_ip'],credentials['proxy_port'])
@@ -178,7 +177,7 @@ def getActivity(credentials, timelower, timeupper):
         "Cookie": "Authorization=%s" % credentials["Bearer"],
         'Content-Length': len(payload),
         'Content-Type': 'application/json;charset=UTF-8',
-        'User-Agent': 'SplunkCollector/1.8.4'
+        'User-Agent': 'SplunkCollector/1.7.8'
     }
     try:
         conn.request("POST", "/v1/userActivityLogs/reports/", payload, headers=headers)
@@ -218,7 +217,7 @@ def getSecurityEvents(credentials, timelower, timeupper, page):
         res = conn.getresponse()
         if res.status == 200:
             appdata = json.loads(res.read())
-            logging.debug("the total amount of waf events for the API call from metaData: %s", appdata['metaData']['totalHits'])
+            logging.info("the total amount of waf events for the API call from metaData: %s", appdata['metaData']['totalHits'])
             logging.debug("getSecurityEvents obtained successfully.")
             return appdata['data']
         else:
@@ -253,7 +252,7 @@ def getDDoSEvents(credentials, timelower, timeupper, page):
         res = conn.getresponse()
         if res.status == 200:
             appdata = json.loads(res.read())
-            logging.debug("the amount of ddos events for the API call is: %d", appdata['metaData']['totalHits'])
+            logging.info("the amount of ddos events for the API call is: %d", appdata['metaData']['totalHits'])
             logging.debug("getDDoSEvents obtained successfully.")
             return appdata['data']
         else:
@@ -276,20 +275,20 @@ def getBotEvents(credentials, timelower, timeupper,applicationID,page):
         logging.error("No application available for the given account : {0!s}".format(applicationIDs))
         logging.error("Response received : {0!s}".format(res))
         return 0
-    payload = json.dumps(applicationID)[:-1] +''',"requestParameters":{"sort_order":"desc","page_size":2500,"page":''' + page + ''',"starttime":''' + timelower + ''',"endtime":''' + timeupper + '''}}'''
+    payload = json.dumps(applicationID)[:-1] +''',"requestParameters":{"sort_order":"desc","page_size":10000,"page":''' + page + ''',"starttime":''' + timelower + ''',"endtime":''' + timeupper + '''}}'''
     headers = {
         "Authorization": "Bearer %s" % credentials["Bearer"],
         'requestEntityids': credentials["TenantID"],
         "Cookie": "Authorization=%s" % credentials["Bearer"],
         'Content-Length': len(payload),
         'Content-Type': 'application/json;charset=UTF-8',
-        'User-Agent': 'SplunkCollector/1.8.4'
+        'User-Agent': 'SplunkCollector/1.7.8'
     }
-    logging.debug("sending the request to get Bot Events")
     conn.request("POST", "/antibot/reports/v2/fetch/bad-bot/iia-list", payload, headers=headers)
     res = conn.getresponse()
-    logging.debug("Response code from Bot Manager is : %d with Content-Length %d.",res.status,res.headers["Content-Length"])
-    logging.debug("Body request for page %s sent to Bot Manager is : %s.",page ,payload)
+    logging.info("Response code from Bot Manager is : %d with Content-Length %d.",res.status,res.headers["Content-Length"])
+    logging.info("Body request sent to Bot Manager is : %s.",payload)
+    #logging.info("Response received from Bot Manager is : %s.",res.read())
     if res.status == 502 or res.status == 400:
         return -1
     elif res.headers["Content-Length"] == "0":
@@ -309,7 +308,6 @@ def getBotEvents(credentials, timelower, timeupper,applicationID,page):
         logging.error("Error occurred on getting Bot events from Cloud AppSec portal on application id : %s. %s",applicationID,traceback.format_exc())
         return -1
 def format_bot_event(helper,ew,bulk_events,page):
-    logging.debug("starting format_bot_event")
     item = 0
     build_event = ""
     while (100*(page-1)+item) < bulk_events["total_count"] and item < 100:
@@ -555,52 +553,11 @@ def format_ddos_event(helper,ew,bulk_events):
         ew.write_event(event)
         item += 1
     return
-
-
-import os
-
-def get_last_run_time():
-    try:
-        # Change the path to an absolute path
-        file_path = '/opt/splunk/var/log/splunk/last_run_time.txt'
-        with open(file_path, 'r') as file:
-            last_run_time = int(file.read().strip())
-    except FileNotFoundError:
-        # If the file does not exist, initialize with current time
-        last_run_time = int(time.time() * 1000)
-        save_last_run_time(last_run_time)
-    return last_run_time
-
-def save_last_run_time(timestamp):
-    # Change the path to an absolute path
-    file_path = '/opt/splunk/var/log/splunk/last_run_time.txt'
-    with open(file_path, 'w') as file:
-        file.write(str(timestamp))
-
-
-
 def collect_events(helper, ew):
     stanza=helper.get_input_stanza()
     for key in stanza:
         interval=int(stanza[key]['interval'])
         pass
-
-    now = int(time.time() * 1000)
-    
-    # 'past' is the last 'now' time saved from the previous run
-    past = get_last_run_time()
-    
-    # Check if 'past' is significantly older than the current 'now' (more than 10 minutes)
-    if now - past > 600000:  # 10 minutes in milliseconds
-        # Reset if the last run was too long ago to the current time - interval
-        past = now -(interval * 1000)
-        os.remove('last_run_time.txt')
-
-    save_last_run_time(now) # Save the current 'now' for the next run as 'past'
-
-    logging.debug("Now Time:", time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(now / 1000)))
-    logging.debug("Past Time:", time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(past / 1000)))
-
     app_id=""
     page=1
     credentials={}
@@ -637,45 +594,45 @@ def collect_events(helper, ew):
         # Get the tenantID for the user, using the authorization token
         credentials["TenantID"]=getTenantID(helper,credentials)
         # Retrieve the events list using the authentication token and time filters
+        now=int(round(time.time() * 1000))
+        past=now-(interval*1000)
         if 'waf_events' in type_logs:
             page=0
-            logging.debug("WAF events were found!")
+            logging.info("WAF events were found!")
             bulk_events=getSecurityEvents(credentials,str(past),str(now),page)
             logging.debug("the number of bulk_events in security events: %s for page: %d", len(bulk_events), page)
-            logging.debug("the timestamps is: lower: %s and now is: %s", datetime.datetime.fromtimestamp(past/1000), datetime.datetime.fromtimestamp(now/1000))
+            logging.debug("the timestamps in EPOCH (milliseconds). lower: %s , upper: %s", str(past), str(now))
             while(len(bulk_events) != 0):
                 format_security_event(helper,ew,bulk_events, credentials["TenantID"])
                 page +=1
-                logging.debug("more WAF pages were found, current page: %d", page)
+                #logging.info("more WAF pages were found, current page: %d", page)
                 bulk_events=getSecurityEvents(credentials,str(past),str(now),page)
                 logging.debug("the number of bulk_events in security events: %s for page: %d", len(bulk_events), page)
         bulk_events.clear()
         if 'ddos_events' in type_logs:
             page = 0
-            logging.debug("DDoS events were found, current page: %d", page)
+            logging.info("DDoS events were found, current page: %d", page)
             bulk_events = getDDoSEvents(credentials, str(past), str(now), page)
             while(len(bulk_events) != 0):
                 format_ddos_event(helper,ew,bulk_events)
                 page +=1
-                logging.debug("more DDoS pages were found, current page: %d", page)
+                logging.info("more DDoS pages were found, current page: %d", page)
                 bulk_events = getDDoSEvents(credentials, str(past), str(now), page)
             bulk_events.clear()
         if 'bot_events' in type_logs:
             applicationIDs["applicationIds"] = getApplicationIDs(credentials)
             bulk_events.clear()
             page=1
-            logging.debug("Bot events were found, current page: %d", page)
+            logging.info("Bot events were found, current page: %d", page)
             bulk_events=getBotEvents(credentials, str(past), str(now),applicationIDs,str(page))
             while (bulk_events != 0) and (bulk_events != -1):
                 format_bot_event(helper,ew,bulk_events,page)
-                logging.debug("the number of Bot events got from this call is for page %d is: %d",page, len(bulk_events["results"]))
-                logging.debug("the time for this run is, past: %s and now is: %s", datetime.datetime.fromtimestamp(past/1000), datetime.datetime.fromtimestamp(now/1000))
-                logging.debug("more Bot pages were found, current page: %d, next page is: %d", page, (page+1))
+                logging.info("more Bot pages were found, current page: %d", page)
                 page+=1
                 bulk_events=getBotEvents(credentials, str(past), str(now),applicationIDs,str(page))
         if 'user_activity' in type_logs:
             bulk_activity = json.loads(getActivity(credentials,str(past),str(now)))
             if (bulk_activity != 0):
                 format_activity(helper,ew,bulk_activity)
-        logging.debug("finished one cycle of events")
+        logging.info("finished one cycle of events")
         LogOut(credentials)
